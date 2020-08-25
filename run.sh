@@ -1,0 +1,1 @@
+docker run -v "$(pwd):/cats-vs-dogs" -it --rm cats-vs-dogs

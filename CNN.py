@@ -1,69 +1,47 @@
-import numpy as np 
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, Flatten, Conv2D, MaxPooling2D
-from keras.callbacks import ModelCheckpoint
-from tensorflow.keras.callbacks import TensorBoard
+import numpy as np
 import pickle
-import time
-import random
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, Activation, MaxPooling2D, Flatten, Dense
 
-IMG_SIZE = 50
 
-# callbacks
-checkpoint = ModelCheckpoint("CNN_weights.hdf5", monitor='val_acc', verbose=1, save_best_only=True, mode='max')
-callbacks_list = [checkpoint]
-
-# loading data from *.pickle files
 X = pickle.load(open("X.pickle", "rb"))
 y = pickle.load(open("y.pickle", "rb"))
+X = np.asarray(X)
+y = np.asarray(y)
 
-X = X/255.0 # normalize data
+X = X/255.0
 
-model = Sequential()
+X_train = X[100:]
+y_train = y[100:]
+X_test = X[:100]
+y_test = y[:100]
 
-model.add(Conv2D( 128, (3,3), input_shape = X.shape[1:] ))
-model.add(Activation("relu"))
-model.add(MaxPooling2D( pool_size=(2,2) ))
+print(X.shape)
 
-model.add(Conv2D( 128, (3,3) ))
-model.add(Activation("relu"))
-model.add(MaxPooling2D( pool_size=(2,2) ))
+model = Sequential([
+    Conv2D(128, (3,3), input_shape=X.shape[1:]),
+    Activation("relu"),
+    MaxPooling2D(pool_size=(2,2)),
 
-model.add(Conv2D( 128, (3,3) ))
-model.add(Activation("relu"))
-model.add(MaxPooling2D( pool_size=(2,2) ))
+    Conv2D(128, (3,3)),
+    Activation("relu"),
+    MaxPooling2D(pool_size=(2,2)),
 
-model.add(Flatten())
-#model.add(Dense(64)) useless
-#model.add(Activation("relu"))
+    Conv2D(128, (3,3)),
+    Activation("relu"),
+    MaxPooling2D(pool_size=(2,2)),
 
-model.add(Dense(1))
-model.add(Activation('sigmoid'))
+    Flatten(),
+    Dense(1),
+    Activation("sigmoid")
+])
 
-model.compile(loss="binary_crossentropy", optimizer="adam", metrics=['accuracy'])
+model.compile(optimizer = "adam", 
+              loss = tf.keras.losses.BinaryCrossentropy(),
+              metrics = ["accuracy"])
 
-try:
-    model.load_weights('CNN_weights.hdf5')
-    print('Weights loaded')
-except:
-    pass
+model.fit(X_train, y_train, epochs=8, verbose=1)
 
-training_data = []
-
-# the model will be training till we end the program
-while(True):
-    model.fit(X, y, batch_size=32, epochs=8, validation_split=0.10, callbacks=callbacks_list) # training
-
-    # reshuffle dataset. I don't even know if it helps
-    for i in range(len(X)):
-        training_data.append( [ X[i], y[i] ] )
-    
-    random.shuffle(training_data)
-
-    X = []
-    y = []
-
-    for features, label in training_data:
-        X.append(features)
-        y.append(label)
-    X = np.array(X).reshape(-1, IMG_SIZE, IMG_SIZE, 1)
+test_loss, test_acc = model.evaluate(X_test, y_test)
+print("\nTest accuracy: ", test_acc)
