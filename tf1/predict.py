@@ -7,7 +7,7 @@ import cv2
 
 file_name = sys.argv[1]
 
-IMG_SIZE = 50 # You can't just change this variable. 
+IMG_SIZE = 50
 
 img = cv2.imread(file_name, cv2.IMREAD_GRAYSCALE)
 img = cv2.resize(img, (IMG_SIZE, IMG_SIZE))
